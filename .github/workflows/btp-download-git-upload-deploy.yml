@@ -33,6 +33,7 @@ jobs:
       btp-token-url: ${{ steps.export.outputs.btp-token-url }}
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
+      git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
     steps:
       - name: Export vars
         id: export
@@ -42,13 +43,14 @@ jobs:
           echo "btp-token-url=${{ vars.BTP_TOKEN_URL }}" >> $GITHUB_OUTPUT
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
+          echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
 
   btp-download-btp:
     needs: [initialize-dev]
     name: Download ${{ inputs.mode }} from DEV
     uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/download-btp-to-git.yml@v1.3.0
     with:
-       workflow-ref: v1.3.0
+       workflow-ref: ${{ needs.initialize-dev.outputs.git-cicd-ref }}
        source-env: DEV
        target-ref: development
        ids: ${{ inputs.id }}
@@ -75,6 +77,7 @@ jobs:
       btp-token-url: ${{ steps.export.outputs.btp-token-url }}
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
+      git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
     steps:
       - name: Export vars
         id: export
@@ -84,13 +87,14 @@ jobs:
           echo "btp-token-url=${{ vars.BTP_TOKEN_URL }}" >> $GITHUB_OUTPUT
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
+          echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
 
   btp-upload-deploy-tst:
     needs: [initialize-tst]
     name: Upload/Deploy ${{ inputs.mode }} to TST
     uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/delete-upload.yml@v1.3.0
     with:
-      workflow-ref: v1.3.0
+      workflow-ref: ${{ needs.initialize-tst.outputs.git-cicd-ref }}
       target-env: TST
       source-ref: development
       integrationpackages-upload-ids: ${{ inputs.mode == 'IntegrationPackages' && inputs.id || '' }}
