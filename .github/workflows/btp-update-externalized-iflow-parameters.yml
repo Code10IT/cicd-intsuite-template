@@ -48,6 +48,7 @@ jobs:
       btp-token-url: ${{ steps.export.outputs.btp-token-url }}
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
+      git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
     steps:
       - name: Export vars
         id: export
@@ -57,12 +58,13 @@ jobs:
           echo "btp-token-url=${{ vars.BTP_TOKEN_URL }}" >> $GITHUB_OUTPUT
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
+          echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
 
   update-externalized-iflow-parameters:
     needs: initialize
     uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/update-externalized-iflow-parameters.yml@v1.3.0
     with:
-       workflow-ref: v1.3.0
+       workflow-ref: ${{ needs.initialize.outputs.git-cicd-ref }}
        target-env: ${{ inputs.target-env }}
        iflow-id: ${{ inputs.iflow-id }}
        source-ref: development
