@@ -34,6 +34,7 @@ jobs:
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
       git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
+      git-target-branch: ${{ steps.export.outputs.git-target-branch }}
     steps:
       - name: Export vars
         id: export
@@ -44,6 +45,7 @@ jobs:
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
           echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
+          echo "git-target-branch=${{ vars.GIT_TARGET_BRANCH || 'main' }}" >> $GITHUB_OUTPUT
 
   btp-download-btp:
     needs: [initialize-dev]
@@ -52,7 +54,7 @@ jobs:
     with:
        workflow-ref: ${{ needs.initialize-dev.outputs.git-cicd-ref }}
        source-env: DEV
-       target-ref: development
+       target-ref: ${{ needs.initialize-dev.outputs.git-target-branch }}
        ids: ${{ inputs.id }}
        mode: ${{ inputs.mode }}
        commit-message: ${{ inputs.commit-message }}
@@ -78,6 +80,7 @@ jobs:
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
       git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
+      git-target-branch: ${{ steps.export.outputs.git-target-branch }}
     steps:
       - name: Export vars
         id: export
@@ -88,6 +91,7 @@ jobs:
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
           echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
+          echo "git-target-branch=${{ vars.GIT_TARGET_BRANCH || 'main' }}" >> $GITHUB_OUTPUT
 
   btp-upload-deploy-tst:
     needs: [initialize-tst]
@@ -96,7 +100,7 @@ jobs:
     with:
       workflow-ref: ${{ needs.initialize-tst.outputs.git-cicd-ref }}
       target-env: TST
-      source-ref: development
+      source-ref: ${{ needs.initialize-tst.outputs.git-target-branch }}
       integrationpackages-upload-ids: ${{ inputs.mode == 'IntegrationPackages' && inputs.id || '' }}
       partnerdirectory-upload-ids: ${{ inputs.mode == 'PartnerDirectory' && inputs.id || '' }}
       btp-api-user: ${{ needs.initialize-tst.outputs.btp-api-user }}
