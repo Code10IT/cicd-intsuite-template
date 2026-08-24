@@ -1,4 +1,5 @@
 name: (Admin) BTP Download into GIT download Branch
+
 on:
   workflow_dispatch:
     inputs:
@@ -39,6 +40,7 @@ jobs:
       btp-api-url: ${{ steps.export.outputs.btp-api-url }}
       git-cicd-orgrepo: ${{ steps.export.outputs.git-cicd-orgrepo }}
       git-cicd-ref: ${{ steps.export.outputs.git-cicd-ref }}
+      git-target-branch: ${{ steps.export.outputs.git-target-branch }}
     steps:
       - name: Export vars
         id: export
@@ -49,6 +51,7 @@ jobs:
           echo "btp-api-url=${{ vars.BTP_API_URL }}" >> $GITHUB_OUTPUT
           echo "git-cicd-orgrepo=${{ vars.GIT_CICD_ORGREPO }}" >> $GITHUB_OUTPUT
           echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
+          echo "git-target-branch=${{ vars.GIT_TARGET_BRANCH || 'main' }}" >> $GITHUB_OUTPUT
 
   btp-download-package:
     needs: [initialize]
@@ -57,7 +60,7 @@ jobs:
     with:
        workflow-ref: ${{ needs.initialize.outputs.git-cicd-ref }}
        source-env: ${{ inputs.source-env }}
-       target-ref: development
+       target-ref: ${{ needs.initialize.outputs.git-target-branch }}
        ids: ${{ inputs.ids }}
        mode: ${{ inputs.mode }}
        commit-message: ${{ inputs.commit-message }}
