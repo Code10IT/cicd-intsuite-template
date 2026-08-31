@@ -1,38 +1,44 @@
-name: (Admin) BTP Download into GIT download Branch
+# Copyright (c) 2025 Mercedes-Benz AG
+# Frank Sprünken <accenture.spruenken@extaccount.com>
+#
+# Version History:
+# 1.0.0 - 2025-11-24 - Initial release (F. Spruenken)
+# 1.0.1 - 2026-01-29 - Introduce environment variable RUNS_ON (O.Weng)
+# 1.0.2 - 2026-02-26 - Remove output of secrets (O.Weng)
+# 1.1.0 - 2026-05-12 - Add GitHub App authentication support (O.Weng)
+# 1.2.0 - 2026-05-21 - Split GitHub App into CICD reader and consumer bot; merge initialize job; add log level; rename iflow-deploy to evaluate-deployment (O.Weng)
+# 1.6.0 - 2026-05-28 - Replace hardcoded target-env options with #!cicd:target-env-options! placeholder (O.Weng)
+#
+
+name: (Dev) Update Externalized Parameters for IFlow on DEV or TST
 
 on:
   workflow_dispatch:
     inputs:
-      ids:
-        description: "Comma-separated list of IDs to be downloaded"
+      target-env:
+        description: "Environment"
         required: true
         type: string
-      source-env:
-        description: "Environment - Source BTP for Download"
+      iflow-id:
+        description: "IFlow ID"
+        required: true
+        type: string
+      evaluate-deployment:
+        description: "Evaluate Deployment_INTEGRATION_FLOW.json"
         required: true
         type: choice
         options:
-          - "DEV"
-          - "TST"
-      mode:
-        description: "Mode IntegrationPackages/PartnerDirectory"
-        required: true
-        type: choice
-        options:
-          - IntegrationPackages
-          - PartnerDirectory
-      commit-message:
-        description: "JIRA Story / SNOW Incident"
-        required: true
-        type: string
+          - "false"
+          - "true"
+
 permissions:
   contents: write
 
 jobs:
   initialize:
-    name: Authorize & Read Environment Variables for ${{ inputs.source-env }}
+    name: Authorize & Read Environment Variables for ${{ inputs.target-env }}
     runs-on: ${{ vars.RUNS_ON && fromJson(vars.RUNS_ON) || 'ubuntu-latest' }}
-    environment: ${{ inputs.source-env }}
+    environment: ${{ inputs.target-env }}
     outputs:
       btp-api-user: ${{ steps.export.outputs.btp-api-user }}
       btp-tec-user: ${{ steps.export.outputs.btp-tec-user }}
@@ -53,24 +59,23 @@ jobs:
           echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
           echo "git-target-branch=${{ vars.GIT_TARGET_BRANCH || 'main' }}" >> $GITHUB_OUTPUT
 
-  btp-download-package:
-    needs: [initialize]
-    name: Download from BTP to GIT
-    uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/download-btp-to-git.yml@v1.3.0
+  update-externalized-iflow-parameters:
+    needs: initialize
+    uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/update-externalized-iflow-parameters.yml@v1.3.0
     with:
        workflow-ref: ${{ needs.initialize.outputs.git-cicd-ref }}
-       source-env: ${{ inputs.source-env }}
-       target-ref: ${{ needs.initialize.outputs.git-target-branch }}
-       ids: ${{ inputs.ids }}
-       mode: ${{ inputs.mode }}
-       commit-message: ${{ inputs.commit-message }}
+       target-env: ${{ inputs.target-env }}
+       iflow-id: ${{ inputs.iflow-id }}
+       source-ref: ${{ needs.initialize.outputs.git-target-branch }}
+       evaluate-deployment: ${{ inputs.evaluate-deployment }}
        btp-api-user: ${{ needs.initialize.outputs.btp-api-user }}
        btp-tec-user: ${{ needs.initialize.outputs.btp-tec-user }}
        btp-token-url: ${{ needs.initialize.outputs.btp-token-url }}
        btp-api-url: ${{ needs.initialize.outputs.btp-api-url }}
        git-cicd-orgrepo: ${{ needs.initialize.outputs.git-cicd-orgrepo }}
+       enable-set-log-level: ${{ vars.BTP_SET_LOG_LEVEL != 'false' }}
     secrets:
-       BTP_API_PASSWORD: ${{ secrets.BTP_API_PASSWORD }}
        BTP_TEC_PASSWORD: ${{ secrets.BTP_TEC_PASSWORD }}
+       BTP_API_PASSWORD: ${{ secrets.BTP_API_PASSWORD }}
        GIT_CICD_TOKEN: ${{ secrets.GIT_CICD_TOKEN }}
        GIT_CICD_APP_PRIVATE_KEY: ${{ secrets.GIT_CICD_APP_PRIVATE_KEY }}
