@@ -1,44 +1,35 @@
-# Copyright (c) 2025 Mercedes-Benz AG
-# Frank Sprünken <accenture.spruenken@extaccount.com>
-#
-# Version History:
-# 1.0.0 - 2025-11-24 - Initial release (F. Spruenken)
-# 1.0.1 - 2026-01-29 - Introduce environment variable RUNS_ON (O.Weng)
-# 1.0.2 - 2026-02-26 - Remove output of secrets (O.Weng)
-# 1.1.0 - 2026-05-12 - Add GitHub App authentication support (O.Weng)
-# 1.2.0 - 2026-05-21 - Split GitHub App into CICD reader and consumer bot; merge initialize job; add log level; rename iflow-deploy to evaluate-deployment (O.Weng)
-# 1.6.0 - 2026-05-28 - Replace hardcoded target-env options with #!cicd:target-env-options! placeholder (O.Weng)
-#
-
-name: (Dev) Update Externalized Parameters for IFlow on DEV or TST
+name: (Admin) BTP Download into GIT download Branch
 
 on:
   workflow_dispatch:
     inputs:
-      target-env:
-        description: "Environment"
+      ids:
+        description: "Comma-separated list of IDs to be downloaded"
         required: true
         type: string
-      iflow-id:
-        description: "IFlow ID"
+      source-env:
+        description: "Environment - Source BTP for Download"
         required: true
         type: string
-      evaluate-deployment:
-        description: "Evaluate Deployment_INTEGRATION_FLOW.json"
+      mode:
+        description: "Mode IntegrationPackages/PartnerDirectory"
         required: true
         type: choice
         options:
-          - "false"
-          - "true"
-
+          - IntegrationPackages
+          - PartnerDirectory
+      commit-message:
+        description: "JIRA Story / SNOW Incident"
+        required: true
+        type: string
 permissions:
   contents: write
 
 jobs:
   initialize:
-    name: Authorize & Read Environment Variables for ${{ inputs.target-env }}
+    name: Authorize & Read Environment Variables for ${{ inputs.source-env }}
     runs-on: ${{ vars.RUNS_ON && fromJson(vars.RUNS_ON) || 'ubuntu-latest' }}
-    environment: ${{ inputs.target-env }}
+    environment: ${{ inputs.source-env }}
     outputs:
       btp-api-user: ${{ steps.export.outputs.btp-api-user }}
       btp-tec-user: ${{ steps.export.outputs.btp-tec-user }}
@@ -59,23 +50,24 @@ jobs:
           echo "git-cicd-ref=${{ vars.GIT_CICD_REF }}" >> $GITHUB_OUTPUT
           echo "git-target-branch=${{ vars.GIT_TARGET_BRANCH || 'main' }}" >> $GITHUB_OUTPUT
 
-  update-externalized-iflow-parameters:
-    needs: initialize
-    uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/update-externalized-iflow-parameters.yml@v1.3.0
+  btp-download-package:
+    needs: [initialize]
+    name: Download from BTP to GIT
+    uses: SAP/cicd-actions-for-sap-integration-suite/.github/workflows/download-btp-to-git.yml@v1.3.0
     with:
        workflow-ref: ${{ needs.initialize.outputs.git-cicd-ref }}
-       target-env: ${{ inputs.target-env }}
-       iflow-id: ${{ inputs.iflow-id }}
-       source-ref: ${{ needs.initialize.outputs.git-target-branch }}
-       evaluate-deployment: ${{ inputs.evaluate-deployment }}
+       source-env: ${{ inputs.source-env }}
+       target-ref: ${{ needs.initialize.outputs.git-target-branch }}
+       ids: ${{ inputs.ids }}
+       mode: ${{ inputs.mode }}
+       commit-message: ${{ inputs.commit-message }}
        btp-api-user: ${{ needs.initialize.outputs.btp-api-user }}
        btp-tec-user: ${{ needs.initialize.outputs.btp-tec-user }}
        btp-token-url: ${{ needs.initialize.outputs.btp-token-url }}
        btp-api-url: ${{ needs.initialize.outputs.btp-api-url }}
        git-cicd-orgrepo: ${{ needs.initialize.outputs.git-cicd-orgrepo }}
-       enable-set-log-level: ${{ vars.BTP_SET_LOG_LEVEL != 'false' }}
     secrets:
-       BTP_TEC_PASSWORD: ${{ secrets.BTP_TEC_PASSWORD }}
        BTP_API_PASSWORD: ${{ secrets.BTP_API_PASSWORD }}
+       BTP_TEC_PASSWORD: ${{ secrets.BTP_TEC_PASSWORD }}
        GIT_CICD_TOKEN: ${{ secrets.GIT_CICD_TOKEN }}
        GIT_CICD_APP_PRIVATE_KEY: ${{ secrets.GIT_CICD_APP_PRIVATE_KEY }}
