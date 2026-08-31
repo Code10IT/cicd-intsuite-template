@@ -67,6 +67,7 @@ jobs:
        BTP_API_PASSWORD: ${{ secrets.BTP_API_PASSWORD }}
        BTP_TEC_PASSWORD: ${{ secrets.BTP_TEC_PASSWORD }}
        GIT_CICD_TOKEN: ${{ secrets.GIT_CICD_TOKEN }}
+       GIT_CICD_APP_PRIVATE_KEY: ${{ secrets.GIT_CICD_APP_PRIVATE_KEY }}
 
   initialize-tst:
     needs: [btp-download-btp]
@@ -112,3 +113,4 @@ jobs:
       BTP_TEC_PASSWORD: ${{ secrets.BTP_TEC_PASSWORD }}
       BTP_API_PASSWORD: ${{ secrets.BTP_API_PASSWORD }}
       GIT_CICD_TOKEN: ${{ secrets.GIT_CICD_TOKEN }}
+      GIT_CICD_APP_PRIVATE_KEY: ${{ secrets.GIT_CICD_APP_PRIVATE_KEY }}
