@@ -18,10 +18,7 @@ on:
       target-env:
         description: "Environment"
         required: true
-        type: choice
-        options:  #!cicd:target-env-options!
-          - "DEV"
-          - "TST"
+        type: string
       iflow-id:
         description: "IFlow ID"
         required: true
